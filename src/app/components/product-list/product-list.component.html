@@ -1,0 +1,60 @@
+<!-- Alerta de éxito (para edición/eliminación) -->
+<div *ngIf="mensaje" class="alert alert-success alert-dismissible fade show" role="alert">
+  {{ mensaje }}
+  <button type="button" class="btn-close" aria-label="Close" (click)="mensaje = ''"></button>
+</div>
+
+<!-- Formulario para agregar o editar productos -->
+<app-product-form></app-product-form>
+
+<!-- Contador de productos registrados -->
+<div class="mb-3" *ngIf="products.length > 0">
+  <span class="badge bg-info text-dark fs-6">
+    Productos registrados: {{ products.length }}
+  </span>
+</div>
+
+<!-- Tabla de productos -->
+<table class="table table-striped mt-4">
+  <thead>
+    <tr>
+      <th>Nombre</th>
+      <th>Precio</th>
+      <th>Email</th>
+      <th>Fecha</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Listado de productos -->
+    <tr *ngFor="let p of paginatedProducts">
+      <td>{{ p.name }}</td>
+      <td>{{ p.price }}</td>
+      <td>{{ p.email }}</td>
+      <td>{{ p.date }}</td>
+      <td>
+        <!-- Botones de acción -->
+        <button class="btn btn-warning btn-sm me-1" (click)="edit(p)">Editar</button>
+        <button class="btn btn-danger btn-sm" (click)="delete(p.id!)">Eliminar</button>
+      </td>
+    </tr>
+
+    <!-- Mensaje si no hay productos -->
+    <tr *ngIf="products.length === 0">
+      <td colspan="5" class="text-center">No hay productos registrados</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- Navegación entre páginas -->
+<div class="d-flex justify-content-between align-items-center mt-3">
+  <button class="btn btn-outline-primary" (click)="prevPage()" [disabled]="!hasPreviousPage">
+    Anterior
+  </button>
+
+  <span>Página {{ currentPage }}</span>
+
+  <button class="btn btn-outline-primary" (click)="nextPage()" [disabled]="!hasNextPage">
+    Siguiente
+  </button>
+</div>
