@@ -1,5 +1,6 @@
 import { Component, inject, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
 import { ProductFormComponent } from '../product-form/product-form.component';
 import { Product } from '../../models/product.model';
@@ -7,65 +8,92 @@ import { Product } from '../../models/product.model';
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [CommonModule, ProductFormComponent],
+  imports: [CommonModule, ProductFormComponent, FormsModule],
   templateUrl: './product-list.component.html'
 })
 export class ProductListComponent {
-  // Inyección del servicio que maneja el array de productos en memoria
   productService = inject(ProductService);
 
-  // Referencia directa al formulario usando @ViewChild (permite editar)
   @ViewChild(ProductFormComponent) formComponent!: ProductFormComponent;
 
-  // Mensaje de feedback para mostrar alertas visuales
   mensaje: string = '';
 
-  // Paginación
   currentPage = 1;
-  itemsPerPage = 1;
-  
-  // Getter que devuelve todos los productos
+  itemsPerPage = 10;
+
+  searchTerm = '';
+  sortField: 'name' | 'price' | 'date' = 'name';
+  sortDirection: 'asc' | 'desc' = 'asc';
+
   get products(): Product[] {
     return this.productService.getAll();
   }
 
-  // Carga los datos del producto en el formulario para edición
+  get filteredProducts(): Product[] {
+    let result = [...this.products];
+
+    if (this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase();
+      result = result.filter(p =>
+        p.name.toLowerCase().includes(term) ||
+        p.email.toLowerCase().includes(term)
+      );
+    }
+
+    result.sort((a, b) => {
+      let comparison = 0;
+      switch (this.sortField) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'price':
+          comparison = a.price - b.price;
+          break;
+        case 'date':
+          comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+          break;
+      }
+      return this.sortDirection === 'asc' ? comparison : -comparison;
+    });
+
+    return result;
+  }
+
   edit(product: Product) {
     this.formComponent.loadProduct(product);
     this.setMensaje('Producto cargado para edición.');
   }
 
-  // Elimina el producto por ID
   delete(id: number) {
-  this.productService.delete(id);
-  this.setMensaje('Producto eliminado correctamente.');
+    this.productService.delete(id);
+    this.setMensaje('Producto eliminado correctamente.');
 
-  // Si la página actual quedó vacía, volver a la anterior
-  const totalPages = Math.ceil(this.products.length / this.itemsPerPage);
-  if (this.currentPage > totalPages) {
-    this.currentPage = totalPages;
+    const totalPages = Math.ceil(this.filteredProducts.length / this.itemsPerPage);
+    if (this.currentPage > totalPages && totalPages > 0) {
+      this.currentPage = totalPages;
+    }
   }
-}
 
-  // Muestra un mensaje por unos segundos
   private setMensaje(texto: string): void {
     this.mensaje = texto;
-    setTimeout(() => this.mensaje = '', 5000); // se borra en 5 segundos
+    setTimeout(() => this.mensaje = '', 5000);
   }
 
-  // Devuelve los productos de la página actual
   get paginatedProducts(): Product[] {
     const start = (this.currentPage - 1) * this.itemsPerPage;
-    return this.products.slice(start, start + this.itemsPerPage);
+    return this.filteredProducts.slice(start, start + this.itemsPerPage);
   }
 
-  // Navegación de páginas
   get hasPreviousPage(): boolean {
     return this.currentPage > 1;
   }
 
   get hasNextPage(): boolean {
-    return this.currentPage * this.itemsPerPage < this.products.length;
+    return this.currentPage * this.itemsPerPage < this.filteredProducts.length;
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.filteredProducts.length / this.itemsPerPage);
   }
 
   nextPage(): void {
@@ -74,5 +102,24 @@ export class ProductListComponent {
 
   prevPage(): void {
     if (this.hasPreviousPage) this.currentPage--;
+  }
+
+  setSort(field: 'name' | 'price' | 'date') {
+    if (this.sortField === field) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortField = field;
+      this.sortDirection = 'asc';
+    }
+    this.currentPage = 1;
+  }
+
+  getSortIcon(field: string): string {
+    if (this.sortField !== field) return '↕';
+    return this.sortDirection === 'asc' ? '↑' : '↓';
+  }
+
+  onSearchChange(): void {
+    this.currentPage = 1;
   }
 }

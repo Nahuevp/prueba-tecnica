@@ -1,60 +1,111 @@
-<!-- Alerta de éxito (para edición/eliminación) -->
-<div *ngIf="mensaje" class="alert alert-success alert-dismissible fade show" role="alert">
-  {{ mensaje }}
-  <button type="button" class="btn-close" aria-label="Close" (click)="mensaje = ''"></button>
-</div>
+<div class="container-fluid px-4 py-4">
+  
+  <div *ngIf="mensaje" class="alert alert-info alert-dismissible fade show" role="alert">
+    <i class="bi bi-info-circle me-2"></i>
+    {{ mensaje }}
+    <button type="button" class="btn-close" (click)="mensaje = ''"></button>
+  </div>
 
-<!-- Formulario para agregar o editar productos -->
-<app-product-form></app-product-form>
+  <app-product-form></app-product-form>
 
-<!-- Contador de productos registrados -->
-<div class="mb-3" *ngIf="products.length > 0">
-  <span class="badge bg-info text-dark fs-6">
-    Productos registrados: {{ products.length }}
-  </span>
-</div>
+  <div class="card border-0 shadow-sm rounded-4 mt-4" *ngIf="products.length > 0">
+    <div class="card-header bg-white py-3 d-flex flex-wrap gap-3 align-items-center">
+      <h5 class="mb-0 fw-bold text-secondary">
+        <i class="bi bi-collection me-2"></i>Listado de productos
+      </h5>
+      
+      <span class="badge bg-secondary-subtle text-secondary fs-6">
+        {{ products.length }} {{ products.length === 1 ? 'producto' : 'productos' }}
+      </span>
 
-<!-- Tabla de productos -->
-<table class="table table-striped mt-4">
-  <thead>
-    <tr>
-      <th>Nombre</th>
-      <th>Precio</th>
-      <th>Email</th>
-      <th>Fecha</th>
-      <th>Acciones</th>
-    </tr>
-  </thead>
-  <tbody>
-    <!-- Listado de productos -->
-    <tr *ngFor="let p of paginatedProducts">
-      <td>{{ p.name }}</td>
-      <td>{{ p.price }}</td>
-      <td>{{ p.email }}</td>
-      <td>{{ p.date }}</td>
-      <td>
-        <!-- Botones de acción -->
-        <button class="btn btn-warning btn-sm me-1" (click)="edit(p)">Editar</button>
-        <button class="btn btn-danger btn-sm" (click)="delete(p.id!)">Eliminar</button>
-      </td>
-    </tr>
+      <div class="ms-auto">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+          <input type="text" class="form-control" placeholder="Buscar..." 
+                 [(ngModel)]="searchTerm" (input)="onSearchChange()" />
+        </div>
+      </div>
+    </div>
 
-    <!-- Mensaje si no hay productos -->
-    <tr *ngIf="products.length === 0">
-      <td colspan="5" class="text-center">No hay productos registrados</td>
-    </tr>
-  </tbody>
-</table>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-4" style="cursor: pointer;" (click)="setSort('name')">
+                <i class="bi bi-box me-1"></i>Nombre {{ getSortIcon('name') }}
+              </th>
+              <th style="cursor: pointer;" (click)="setSort('price')">
+                <i class="bi bi-currency-dollar me-1"></i>Precio {{ getSortIcon('price') }}
+              </th>
+              <th><i class="bi bi-envelope me-1"></i>Email</th>
+              <th style="cursor: pointer;" (click)="setSort('date')">
+                <i class="bi bi-calendar me-1"></i>Fecha {{ getSortIcon('date') }}
+              </th>
+              <th class="pe-4"><i class="bi bi-gear me-1"></i>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of paginatedProducts" class="align-middle">
+              <td class="ps-4 fw-medium">{{ p.name }}</td>
+              <td><span class="badge bg-success-subtle text-success fs-6">${{ p.price | number:'1.2-2' }}</span></td>
+              <td><small class="text-muted">{{ p.email }}</small></td>
+              <td><span class="badge bg-light text-dark">{{ p.date | date:'dd/MM/yyyy' }}</span></td>
+              <td class="pe-4">
+                <button class="btn btn-outline-warning btn-sm me-1" (click)="edit(p)" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-outline-danger btn-sm" (click)="delete(p.id!)" title="Eliminar">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
 
-<!-- Navegación entre páginas -->
-<div class="d-flex justify-content-between align-items-center mt-3">
-  <button class="btn btn-outline-primary" (click)="prevPage()" [disabled]="!hasPreviousPage">
-    Anterior
-  </button>
+            <tr *ngIf="filteredProducts.length === 0">
+              <td colspan="5" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                {{ searchTerm ? 'No se encontraron productos' : 'No hay productos registrados' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
-  <span>Página {{ currentPage }}</span>
+    <div class="card-footer bg-white py-3" *ngIf="filteredProducts.length > 0">
+      <div class="d-flex flex-wrap justify-content-between align-items-center">
+        <span class="text-muted small">
+          Mostrando {{ paginatedProducts.length }} de {{ filteredProducts.length }}
+        </span>
+        
+        <nav>
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" [class.disabled]="!hasPreviousPage">
+              <button class="page-link" (click)="prevPage()">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+            </li>
+            
+            <li class="page-item disabled">
+              <span class="page-link bg-white">
+                {{ currentPage }} / {{ totalPages }}
+              </span>
+            </li>
+            
+            <li class="page-item" [class.disabled]="!hasNextPage">
+              <button class="page-link" (click)="nextPage()">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
 
-  <button class="btn btn-outline-primary" (click)="nextPage()" [disabled]="!hasNextPage">
-    Siguiente
-  </button>
+  <div class="text-center py-5" *ngIf="products.length === 0">
+    <i class="bi bi-box-seam fs-1 text-muted"></i>
+    <p class="text-muted mt-2">No hay productos registrados</p>
+  </div>
+
 </div>

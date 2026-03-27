@@ -1,36 +1,35 @@
 import { Injectable } from '@angular/core';
 import { Product } from '../models/product.model';
 
-// Servicio inyectable disponible a nivel global (root)
 @Injectable({ providedIn: 'root' })
 export class ProductService {
-  // Array en memoria para almacenar los productos
   private products: Product[] = [];
-
-  // ID incremental para asignar identificadores únicos
   private currentId = 1;
 
-  // Devuelve todos los productos registrados
   getAll(): Product[] {
     return this.products;
   }
 
-  // Agrega un nuevo producto al array
   add(product: Product): void {
-    product.id = this.currentId++; // asigna ID único
-    this.products.push({ ...product }); // clona y guarda
+    product.id = this.currentId++;
+    this.products.push({ ...product });
   }
 
-  // Actualiza un producto existente según su ID
   update(product: Product): void {
     const index = this.products.findIndex(p => p.id === product.id);
     if (index !== -1) {
-      this.products[index] = { ...product }; // reemplaza datos
+      this.products[index] = { ...product };
     }
   }
 
-  // Elimina un producto por su ID
   delete(id: number): void {
     this.products = this.products.filter(p => p.id !== id);
+  }
+
+  isDuplicate(product: Omit<Product, 'id'>): boolean {
+    return this.products.some(
+      p => p.name.toLowerCase() === product.name.toLowerCase() && 
+           p.email.toLowerCase() === product.email.toLowerCase()
+    );
   }
 }

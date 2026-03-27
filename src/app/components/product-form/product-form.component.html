@@ -1,62 +1,94 @@
-<!-- Alerta de confirmación (se muestra al agregar o editar un producto) -->
-<div *ngIf="mensaje" class="alert alert-success" role="alert">
-  {{ mensaje }}
-</div>
-
-<!-- Tarjeta visual del formulario -->
-<div class="card shadow-sm mb-4">
-  <div class="card-body">
-
-    <h5 class="card-title mb-3">
-      {{ editing ? 'Editar producto' : 'Agregar nuevo producto' }}
-    </h5>
-
-    <!-- Formulario reactivo para agregar o editar productos -->
-    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+<div class="container-fluid px-4 py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
       
-      <!-- Campo: Nombre -->
-      <div class="mb-3">
-        <label class="form-label">Nombre del producto</label>
-        <input type="text" formControlName="name" class="form-control" />
-        <div *ngIf="form.get('name')?.invalid && form.get('name')?.touched" class="text-danger mt-1">
-          El nombre es requerido.
+      <div *ngIf="mensaje" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i>
+        {{ mensaje }}
+        <button type="button" class="btn-close" (click)="mensaje = ''"></button>
+      </div>
+
+      <div class="card border-0 shadow-lg rounded-4">
+        <div class="card-header bg-white py-3 border-bottom">
+          <h5 class="mb-0 fw-bold text-secondary">
+            <i class="bi bi-box-seam me-2"></i>
+            {{ editing ? 'Editar producto' : 'Nuevo producto' }}
+          </h5>
+        </div>
+        
+        <div class="card-body p-4">
+          <form [formGroup]="form" (ngSubmit)="onSubmit()">
+            
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label fw-semibold">Nombre del producto <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light"><i class="bi bi-tag"></i></span>
+                  <input type="text" formControlName="name" class="form-control" 
+                         [class.is-invalid]="isFieldInvalid('name')" 
+                         placeholder="Ingrese el nombre del producto" />
+                </div>
+                <div *ngIf="isFieldInvalid('name')" class="invalid-feedback d-block">
+                  {{ getErrorMessage('name') }}
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Precio <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light">$</span>
+                  <input type="number" formControlName="price" class="form-control" 
+                         step="0.01" min="0" 
+                         [class.is-invalid]="isFieldInvalid('price')"
+                         placeholder="0.00" />
+                </div>
+                <div *ngIf="isFieldInvalid('price')" class="invalid-feedback d-block">
+                  {{ getErrorMessage('price') }}
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Fecha de ingreso <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light"><i class="bi bi-calendar"></i></span>
+                  <input type="date" formControlName="date" class="form-control" 
+                         [class.is-invalid]="isFieldInvalid('date')" />
+                </div>
+                <div *ngIf="isFieldInvalid('date')" class="invalid-feedback d-block">
+                  {{ getErrorMessage('date') }}
+                </div>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label fw-semibold">Correo del proveedor <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
+                  <input type="email" formControlName="email" class="form-control" 
+                         [class.is-invalid]="isFieldInvalid('email')"
+                         placeholder="correo@ejemplo.com" />
+                </div>
+                <div *ngIf="isFieldInvalid('email')" class="invalid-feedback d-block">
+                  {{ getErrorMessage('email') }}
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+              <button type="submit" class="btn btn-primary btn-lg px-4" [disabled]="form.invalid">
+                <i class="bi" [class.bi-plus-lg]="!editing" [class.bi-check-lg]="editing"></i>
+                {{ editing ? 'Guardar cambios' : 'Agregar producto' }}
+              </button>
+              
+              <button type="button" class="btn btn-outline-secondary btn-lg px-4" 
+                      *ngIf="editing" (click)="form.reset({ price: null, date: '' }); editing = false; editId = null;">
+                Cancelar
+              </button>
+            </div>
+
+          </form>
         </div>
       </div>
 
-      <!-- Campo: Precio -->
-      <div class="mb-3">
-        <label class="form-label">Precio</label>
-        <input type="number" formControlName="price" class="form-control" />
-        <div *ngIf="form.get('price')?.invalid && form.get('price')?.touched" class="text-danger mt-1">
-          <span *ngIf="form.get('price')?.errors?.['required']">El precio es requerido.</span>
-          <span *ngIf="form.get('price')?.errors?.['min']">Debe ser mayor a 0.</span>
-        </div>
-      </div>
-
-      <!-- Campo: Correo del proveedor -->
-      <div class="mb-3">
-        <label class="form-label">Correo del proveedor</label>
-        <input type="email" formControlName="email" class="form-control" />
-        <div *ngIf="form.get('email')?.invalid && form.get('email')?.touched" class="text-danger mt-1">
-          <span *ngIf="form.get('email')?.errors?.['required']">El correo es requerido.</span>
-          <span *ngIf="form.get('email')?.errors?.['pattern']">Formato de correo inválido.</span>
-        </div>
-      </div>
-
-      <!-- Campo: Fecha de ingreso -->
-      <div class="mb-3">
-        <label class="form-label">Fecha de ingreso</label>
-        <input type="date" formControlName="date" class="form-control" />
-        <div *ngIf="form.get('date')?.invalid && form.get('date')?.touched" class="text-danger mt-1">
-          La fecha es requerida.
-        </div>
-      </div>
-
-      <!-- Botón para enviar el formulario -->
-      <button type="submit" class="btn btn-primary" [disabled]="form.invalid">
-        {{ editing ? 'Editar producto' : 'Agregar producto' }}
-      </button>
-
-    </form>
+    </div>
   </div>
 </div>
