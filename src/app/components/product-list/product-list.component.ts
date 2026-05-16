@@ -1,4 +1,4 @@
-import { Component, inject, ViewChild } from '@angular/core';
+import { Component, inject, computed, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
@@ -16,110 +16,74 @@ export class ProductListComponent {
 
   @ViewChild(ProductFormComponent) formComponent!: ProductFormComponent;
 
-  mensaje: string = '';
-
-  currentPage = 1;
+  Math = Math;
+  isDrawerOpen = signal(false);
+  currentPage = signal(1);
   itemsPerPage = 10;
+  
+  sortField = signal<'name' | 'price' | 'email' | 'date'>('name');
+  sortDirection = signal<'asc' | 'desc'>('asc');
 
-  searchTerm = '';
-  sortField: 'name' | 'price' | 'date' = 'name';
-  sortDirection: 'asc' | 'desc' = 'asc';
-
-  get products(): Product[] {
-    return this.productService.getAll();
-  }
-
-  get filteredProducts(): Product[] {
-    let result = [...this.products];
-
-    if (this.searchTerm.trim()) {
-      const term = this.searchTerm.toLowerCase();
-      result = result.filter(p =>
-        p.name.toLowerCase().includes(term) ||
-        p.email.toLowerCase().includes(term)
-      );
-    }
-
-    result.sort((a, b) => {
-      let comparison = 0;
-      switch (this.sortField) {
-        case 'name':
-          comparison = a.name.localeCompare(b.name);
-          break;
-        case 'price':
-          comparison = a.price - b.price;
-          break;
-        case 'date':
-          comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
-          break;
-      }
-      return this.sortDirection === 'asc' ? comparison : -comparison;
+  readonly sortedProducts = computed(() => {
+    const products = [...this.productService.filteredProducts()];
+    const field = this.sortField();
+    const dir = this.sortDirection() === 'asc' ? 1 : -1;
+    
+    return products.sort((a, b) => {
+      if (field === 'name') return a.name.localeCompare(b.name) * dir;
+      if (field === 'price') return (a.price - b.price) * dir;
+      if (field === 'email') return a.email.localeCompare(b.email) * dir;
+      return (new Date(a.date).getTime() - new Date(b.date).getTime()) * dir;
     });
+  });
 
-    return result;
+  readonly paginatedProducts = computed(() => {
+    const start = (this.currentPage() - 1) * this.itemsPerPage;
+    return this.sortedProducts().slice(start, start + this.itemsPerPage);
+  });
+
+  readonly totalPages = computed(() => Math.ceil(this.sortedProducts().length / this.itemsPerPage));
+
+  getPagesArray(): number[] {
+    return Array.from({length: this.totalPages()}, (_, i) => i + 1);
   }
 
-  edit(product: Product) {
+  onSearch(event: Event) {
+    const val = (event.target as HTMLInputElement).value;
+    this.productService.searchQuery.set(val);
+    this.currentPage.set(1);
+  }
+
+  setSort(field: 'name' | 'price' | 'email' | 'date') {
+    if (this.sortField() === field) {
+      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortField.set(field);
+      this.sortDirection.set('asc');
+    }
+    this.currentPage.set(1);
+  }
+
+  openAddDrawer() {
+    this.formComponent.resetForm();
+    this.isDrawerOpen.set(true);
+  }
+
+  openEditDrawer(product: Product) {
     this.formComponent.loadProduct(product);
-    this.setMensaje('Producto cargado para edición.');
+    this.isDrawerOpen.set(true);
+  }
+
+  closeDrawer() {
+    this.isDrawerOpen.set(false);
   }
 
   delete(id: number) {
-    this.productService.delete(id);
-    this.setMensaje('Producto eliminado correctamente.');
-
-    const totalPages = Math.ceil(this.filteredProducts.length / this.itemsPerPage);
-    if (this.currentPage > totalPages && totalPages > 0) {
-      this.currentPage = totalPages;
+    if (confirm('Are you sure you want to delete this product?')) {
+      this.productService.delete(id);
+      if (this.currentPage() > this.totalPages() && this.totalPages() > 0) {
+         this.currentPage.set(this.totalPages());
+      }
     }
-  }
-
-  private setMensaje(texto: string): void {
-    this.mensaje = texto;
-    setTimeout(() => this.mensaje = '', 5000);
-  }
-
-  get paginatedProducts(): Product[] {
-    const start = (this.currentPage - 1) * this.itemsPerPage;
-    return this.filteredProducts.slice(start, start + this.itemsPerPage);
-  }
-
-  get hasPreviousPage(): boolean {
-    return this.currentPage > 1;
-  }
-
-  get hasNextPage(): boolean {
-    return this.currentPage * this.itemsPerPage < this.filteredProducts.length;
-  }
-
-  get totalPages(): number {
-    return Math.ceil(this.filteredProducts.length / this.itemsPerPage);
-  }
-
-  nextPage(): void {
-    if (this.hasNextPage) this.currentPage++;
-  }
-
-  prevPage(): void {
-    if (this.hasPreviousPage) this.currentPage--;
-  }
-
-  setSort(field: 'name' | 'price' | 'date') {
-    if (this.sortField === field) {
-      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
-    } else {
-      this.sortField = field;
-      this.sortDirection = 'asc';
-    }
-    this.currentPage = 1;
-  }
-
-  getSortIcon(field: string): string {
-    if (this.sortField !== field) return '↕';
-    return this.sortDirection === 'asc' ? '↑' : '↓';
-  }
-
-  onSearchChange(): void {
-    this.currentPage = 1;
   }
 }

@@ -1,111 +1,144 @@
-<div class="container-fluid px-4 py-4">
+<div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden mt-6">
   
-  <div *ngIf="mensaje" class="alert alert-info alert-dismissible fade show" role="alert">
-    <i class="bi bi-info-circle me-2"></i>
-    {{ mensaje }}
-    <button type="button" class="btn-close" (click)="mensaje = ''"></button>
+  <!-- Toolbar -->
+  <div class="p-6 border-b border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="relative w-full md:w-96">
+      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <svg class="h-5 w-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+      <input type="text" 
+             placeholder="Search products or providers..." 
+             (input)="onSearch($event)"
+             class="block w-full pl-10 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all placeholder-slate-500">
+    </div>
+
+    <div class="flex items-center gap-3">
+      <button (click)="openAddDrawer()" 
+              class="flex items-center justify-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold py-2.5 px-5 rounded-xl transition-colors shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Add Product
+      </button>
+    </div>
   </div>
 
-  <app-product-form></app-product-form>
+  <!-- Table -->
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-sm whitespace-nowrap">
+      <thead class="bg-slate-950/50 text-slate-400">
+        <tr>
+          <th scope="col" class="px-6 py-4 font-medium cursor-pointer hover:text-slate-200 transition-colors" (click)="setSort('name')">
+            <div class="flex items-center gap-2">
+              Product Name
+              <svg *ngIf="sortField() !== 'name'" class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
+              <svg *ngIf="sortField() === 'name' && sortDirection() === 'asc'" class="w-4 h-4 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+              <svg *ngIf="sortField() === 'name' && sortDirection() === 'desc'" class="w-4 h-4 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+          </th>
+          <th scope="col" class="px-6 py-4 font-medium cursor-pointer hover:text-slate-200 transition-colors" (click)="setSort('price')">
+            <div class="flex items-center gap-2">
+              Price
+              <svg *ngIf="sortField() !== 'price'" class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
+              <svg *ngIf="sortField() === 'price' && sortDirection() === 'asc'" class="w-4 h-4 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+              <svg *ngIf="sortField() === 'price' && sortDirection() === 'desc'" class="w-4 h-4 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+          </th>
+          <th scope="col" class="px-6 py-4 font-medium cursor-pointer hover:text-slate-200 transition-colors" (click)="setSort('email')">
+            <div class="flex items-center gap-2">
+              Provider Email
+              <svg *ngIf="sortField() !== 'email'" class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
+              <svg *ngIf="sortField() === 'email' && sortDirection() === 'asc'" class="w-4 h-4 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+              <svg *ngIf="sortField() === 'email' && sortDirection() === 'desc'" class="w-4 h-4 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+          </th>
+          <th scope="col" class="px-6 py-4 font-medium cursor-pointer hover:text-slate-200 transition-colors" (click)="setSort('date')">
+            <div class="flex items-center gap-2">
+              Date of Entry
+              <svg *ngIf="sortField() !== 'date'" class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
+              <svg *ngIf="sortField() === 'date' && sortDirection() === 'asc'" class="w-4 h-4 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+              <svg *ngIf="sortField() === 'date' && sortDirection() === 'desc'" class="w-4 h-4 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+          </th>
+          <th scope="col" class="px-6 py-4 font-medium text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-800/50">
+        <tr *ngFor="let product of paginatedProducts()" class="hover:bg-slate-800/20 transition-colors group">
+          <td class="px-6 py-4">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center border border-cyan-500/20">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+              </div>
+              <span class="font-medium text-slate-200">{{ product.name }}</span>
+            </div>
+          </td>
+          <td class="px-6 py-4 text-cyan-400 font-medium font-mono">${{ product.price | number:'1.2-2' }}</td>
+          <td class="px-6 py-4 text-slate-400">{{ product.email }}</td>
+          <td class="px-6 py-4 text-slate-400">{{ product.date }}</td>
+          <td class="px-6 py-4 text-right">
+            <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button (click)="openEditDrawer(product)" class="p-2 text-slate-400 hover:text-cyan-400 bg-slate-950 rounded-lg border border-slate-800 hover:border-cyan-500/30 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+              </button>
+              <button (click)="delete(product.id!)" class="p-2 text-slate-400 hover:text-rose-400 bg-slate-950 rounded-lg border border-slate-800 hover:border-rose-500/30 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="paginatedProducts().length === 0">
+          <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+            <svg class="mx-auto h-12 w-12 mb-3 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+            <p>No products found matching your criteria.</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
-  <div class="card border-0 shadow-sm rounded-4 mt-4" *ngIf="products.length > 0">
-    <div class="card-header bg-white py-3 d-flex flex-wrap gap-3 align-items-center">
-      <h5 class="mb-0 fw-bold text-secondary">
-        <i class="bi bi-collection me-2"></i>Listado de productos
-      </h5>
+  <!-- Pagination -->
+  <div class="px-6 py-4 border-t border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4" *ngIf="totalPages() > 1">
+    <p class="text-sm text-slate-400">
+      Showing <span class="font-medium text-slate-200">{{ (currentPage() - 1) * itemsPerPage + 1 }}</span> to 
+      <span class="font-medium text-slate-200">{{ Math.min(currentPage() * itemsPerPage, sortedProducts().length) }}</span> of 
+      <span class="font-medium text-slate-200">{{ sortedProducts().length }}</span> products
+    </p>
+    <div class="flex gap-2 items-center">
+      <button [disabled]="currentPage() === 1" (click)="currentPage.set(currentPage() - 1)" 
+              class="pl-3 pr-4 py-1.5 rounded-xl bg-slate-950/80 hover:bg-slate-900 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium flex items-center gap-1 border border-slate-800/60">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        Previous
+      </button>
       
-      <span class="badge bg-secondary-subtle text-secondary fs-6">
-        {{ products.length }} {{ products.length === 1 ? 'producto' : 'productos' }}
-      </span>
-
-      <div class="ms-auto">
-        <div class="input-group input-group-sm">
-          <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-          <input type="text" class="form-control" placeholder="Buscar..." 
-                 [(ngModel)]="searchTerm" (input)="onSearchChange()" />
-        </div>
+      <div class="flex items-center gap-1 px-1">
+        <button *ngFor="let p of getPagesArray()" (click)="currentPage.set(p)"
+                class="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-semibold transition-colors"
+                [ngClass]="{'bg-cyan-500 text-slate-950': currentPage() === p, 'text-slate-300 hover:bg-slate-800': currentPage() !== p}">
+          {{ p }}
+        </button>
       </div>
-    </div>
 
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table table-hover mb-0">
-          <thead class="table-light">
-            <tr>
-              <th class="ps-4" style="cursor: pointer;" (click)="setSort('name')">
-                <i class="bi bi-box me-1"></i>Nombre {{ getSortIcon('name') }}
-              </th>
-              <th style="cursor: pointer;" (click)="setSort('price')">
-                <i class="bi bi-currency-dollar me-1"></i>Precio {{ getSortIcon('price') }}
-              </th>
-              <th><i class="bi bi-envelope me-1"></i>Email</th>
-              <th style="cursor: pointer;" (click)="setSort('date')">
-                <i class="bi bi-calendar me-1"></i>Fecha {{ getSortIcon('date') }}
-              </th>
-              <th class="pe-4"><i class="bi bi-gear me-1"></i>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let p of paginatedProducts" class="align-middle">
-              <td class="ps-4 fw-medium">{{ p.name }}</td>
-              <td><span class="badge bg-success-subtle text-success fs-6">${{ p.price | number:'1.2-2' }}</span></td>
-              <td><small class="text-muted">{{ p.email }}</small></td>
-              <td><span class="badge bg-light text-dark">{{ p.date | date:'dd/MM/yyyy' }}</span></td>
-              <td class="pe-4">
-                <button class="btn btn-outline-warning btn-sm me-1" (click)="edit(p)" title="Editar">
-                  <i class="bi bi-pencil"></i>
-                </button>
-                <button class="btn btn-outline-danger btn-sm" (click)="delete(p.id!)" title="Eliminar">
-                  <i class="bi bi-trash"></i>
-                </button>
-              </td>
-            </tr>
-
-            <tr *ngIf="filteredProducts.length === 0">
-              <td colspan="5" class="text-center py-4 text-muted">
-                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                {{ searchTerm ? 'No se encontraron productos' : 'No hay productos registrados' }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card-footer bg-white py-3" *ngIf="filteredProducts.length > 0">
-      <div class="d-flex flex-wrap justify-content-between align-items-center">
-        <span class="text-muted small">
-          Mostrando {{ paginatedProducts.length }} de {{ filteredProducts.length }}
-        </span>
-        
-        <nav>
-          <ul class="pagination pagination-sm mb-0">
-            <li class="page-item" [class.disabled]="!hasPreviousPage">
-              <button class="page-link" (click)="prevPage()">
-                <i class="bi bi-chevron-left"></i>
-              </button>
-            </li>
-            
-            <li class="page-item disabled">
-              <span class="page-link bg-white">
-                {{ currentPage }} / {{ totalPages }}
-              </span>
-            </li>
-            
-            <li class="page-item" [class.disabled]="!hasNextPage">
-              <button class="page-link" (click)="nextPage()">
-                <i class="bi bi-chevron-right"></i>
-              </button>
-            </li>
-          </ul>
-        </nav>
-      </div>
+      <button [disabled]="currentPage() === totalPages()" (click)="currentPage.set(currentPage() + 1)"
+              class="pl-4 pr-3 py-1.5 rounded-xl bg-slate-950/80 hover:bg-slate-900 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium flex items-center gap-1 border border-slate-800/60">
+        Next
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+      </button>
     </div>
   </div>
+</div>
 
-  <div class="text-center py-5" *ngIf="products.length === 0">
-    <i class="bi bi-box-seam fs-1 text-muted"></i>
-    <p class="text-muted mt-2">No hay productos registrados</p>
+<!-- Modal/Drawer Overlay (Managed by list component to wrap the form) -->
+<div class="fixed inset-0 z-50 flex justify-end transition-all duration-300"
+     [ngClass]="{'opacity-100 pointer-events-auto': isDrawerOpen(), 'opacity-0 pointer-events-none': !isDrawerOpen()}">
+  <!-- Backdrop -->
+  <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" (click)="closeDrawer()"></div>
+  
+  <!-- Drawer Panel (Wide Power-Up) -->
+  <div class="relative w-full max-w-2xl bg-slate-900 border-l border-slate-800 shadow-2xl h-full flex flex-col transform transition-transform duration-300"
+       [ngClass]="{'translate-x-0': isDrawerOpen(), 'translate-x-full': !isDrawerOpen()}">
+    <app-product-form (formClosed)="closeDrawer()"></app-product-form>
   </div>
-
 </div>

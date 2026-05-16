@@ -1,1 +1,16 @@
-/* You can add global styles to this file, and also import other style files */
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #06b6d4;
+  --color-primary-hover: #0891b2;
+  --color-bg-dark: #020617;
+  --color-card: #0f172a;
+  --color-border: #1e293b;
+}
+
+body {
+  background-color: var(--color-bg-dark);
+  color: #f8fafc;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

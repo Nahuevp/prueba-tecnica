@@ -1,6 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
 import { Product } from '../../models/product.model';
 
@@ -14,20 +14,49 @@ export class ProductFormComponent {
   private fb = inject(FormBuilder);
   private productService = inject(ProductService);
 
+  @Output() formClosed = new EventEmitter<void>();
+
   form: FormGroup;
   editing = false;
   editId: number | null = null;
   mensaje = '';
 
   constructor() {
-    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
-    
     this.form = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
       price: [null, [Validators.required, Validators.min(1), Validators.pattern(/^\d+(\.\d{1,2})?$/)]],
       email: ['', [Validators.required, Validators.email]],
-      date: ['', [Validators.required, Validators.pattern(datePattern)]]
-    });
+      date: ['', [Validators.required, this.dateValidator]]
+    }, { validators: this.duplicateValidator.bind(this) });
+  }
+
+  dateValidator(control: AbstractControl): ValidationErrors | null {
+    if (!control.value) return null;
+    const inputDate = new Date(control.value);
+    const today = new Date();
+    if (isNaN(inputDate.getTime())) return { invalidDate: true };
+    if (inputDate > today) return { futureDate: true };
+    return null;
+  }
+
+  duplicateValidator(group: AbstractControl): ValidationErrors | null {
+    const name = group.get('name')?.value;
+    const email = group.get('email')?.value;
+    
+    if (name && email) {
+      const isDup = this.productService.isDuplicate({ name, email, price: 0, date: '' }, this.editId || undefined);
+      if (isDup) {
+        group.get('name')?.setErrors({ duplicate: true });
+        return { duplicate: true };
+      } else {
+        const nameCtrl = group.get('name');
+        if (nameCtrl?.errors && nameCtrl.errors['duplicate']) {
+          delete nameCtrl.errors['duplicate'];
+          if (Object.keys(nameCtrl.errors).length === 0) nameCtrl.setErrors(null);
+        }
+      }
+    }
+    return null;
   }
 
   onSubmit(): void {
@@ -42,20 +71,14 @@ export class ProductFormComponent {
       this.productService.update({ id: this.editId, ...productData });
       this.mensaje = 'Producto editado correctamente';
     } else {
-      if (this.productService.isDuplicate(productData)) {
-        this.mensaje = 'Ya existe un producto con el mismo nombre y correo';
-        setTimeout(() => this.mensaje = '', 3000);
-        return;
-      }
       this.productService.add(productData);
       this.mensaje = 'Producto agregado correctamente';
     }
 
-    this.form.reset({ price: null, date: '' });
-    this.editing = false;
-    this.editId = null;
-
-    setTimeout(() => this.mensaje = '', 3000);
+    setTimeout(() => {
+      this.mensaje = '';
+      this.formClosed.emit();
+    }, 1200);
   }
 
   loadProduct(product: Product) {
@@ -64,24 +87,19 @@ export class ProductFormComponent {
     this.editId = product.id!;
   }
 
+  resetForm() {
+    this.form.reset({ price: null, date: '' });
+    this.editing = false;
+    this.editId = null;
+    this.mensaje = '';
+  }
+
+  close() {
+    this.formClosed.emit();
+  }
+
   isFieldInvalid(field: string): boolean {
     const control = this.form.get(field);
     return !!(control && control.invalid && control.touched);
-  }
-
-  getErrorMessage(field: string): string {
-    const control = this.form.get(field);
-    if (!control || !control.errors) return '';
-
-    if (control.errors['required']) return 'Este campo es requerido';
-    if (control.errors['minlength']) return `Mínimo ${control.errors['minlength'].requiredLength} caracteres`;
-    if (control.errors['min']) return 'Debe ser mayor a 0';
-    if (control.errors['pattern']) {
-      if (field === 'price') return 'Ingrese un número válido';
-      if (field === 'date') return 'Formato de fecha inválido (use YYYY-MM-DD)';
-    }
-    if (control.errors['email']) return 'Formato de correo inválido';
-
-    return '';
   }
 }
